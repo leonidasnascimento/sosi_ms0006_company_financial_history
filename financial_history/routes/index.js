@@ -103,8 +103,8 @@ router.get('/stats/', function (req, res, next) {
     //Performing stats logic
     var result_obj = {
       has_dividend_been_constantly_shared: null,
-      is_dividend_growing_over_years: null,
-      is_net_profit_growing_over_years: null,
+      has_dividend_grown_over_years: null,
+      has_net_profit_grown_over_years: null,
     }
 
     var arr_values_cash_flow_dividend = []
@@ -123,8 +123,8 @@ router.get('/stats/', function (req, res, next) {
         }
 
         result_obj.has_dividend_been_constantly_shared = have_financial_results_one_year_diff_each_other(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
-        result_obj.is_dividend_growing_over_years = are_values_indicating_growth(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
-        result_obj.is_net_profit_growing_over_years = are_values_indicating_growth(arr_values_cash_flow_net_profit, min_allowed_years_fin_result)
+        result_obj.has_dividend_grown_over_years = are_values_indicating_growth(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
+        result_obj.has_net_profit_grown_over_years = are_values_indicating_growth(arr_values_cash_flow_net_profit, min_allowed_years_fin_result)
       }
     }
 
