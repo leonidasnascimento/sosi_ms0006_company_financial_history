@@ -102,7 +102,7 @@ router.get('/stats/', function (req, res, next) {
   new dal().get(stock_code, function (data) {
     //Performing stats logic
     var result_obj = {
-      has_dividend_been_constantly_shared_lst_4yrs: null,
+      has_dividend_been_constantly_shared: null,
       is_dividend_growing_over_years: null,
       is_net_profit_growing_over_years: null,
     }
@@ -122,7 +122,7 @@ router.get('/stats/', function (req, res, next) {
           }
         }
 
-        result_obj.has_dividend_been_constantly_shared_lst_4yrs = have_financial_results_one_year_diff_each_other(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
+        result_obj.has_dividend_been_constantly_shared = have_financial_results_one_year_diff_each_other(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
         result_obj.is_dividend_growing_over_years = are_values_indicating_growth(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
         result_obj.is_net_profit_growing_over_years = are_values_indicating_growth(arr_values_cash_flow_net_profit, min_allowed_years_fin_result)
       }
