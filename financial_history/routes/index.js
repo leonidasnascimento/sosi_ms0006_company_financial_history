@@ -60,10 +60,19 @@ var are_values_indicating_growth = function (values, min_req_itens) {
   var reg_result = regression.linear(arr_values)
   var predicted_value = reg_result.predict((values.length + 1)) //Predicts the result for one more year 
 
-  if (predicted_value[1] < reg_result.points[0][1]) {
-    return false
+  if (predicted_value != null &&
+    predicted_value.length > 1 &&
+    reg_result != null &&
+    reg_result.points != null &&
+    reg_result.points.length > 0 &&
+    reg_result.points[0].length > 1) {
+    if (predicted_value[1] < reg_result.points[0][1]) {
+      return false
+    } else {
+      return true
+    }
   } else {
-    return true
+    return false
   }
 }
 
@@ -82,7 +91,7 @@ router.get('/', function (req, res, next) {
 router.get('/stats/', function (req, res, next) {
   var qry_str_param_stock_code = "code"
   var qry_str_param_min_years_required = "min_required_years"
-  
+
   if ((Object.keys(req.query).length === 0) || (Object.keys(req.query).indexOf(qry_str_param_stock_code) < 0)) {
     res.status(HttpStatus.EXPECTATION_FAILED).send("Stock code not informed")
     return
@@ -91,7 +100,7 @@ router.get('/stats/', function (req, res, next) {
   if ((Object.keys(req.query).length === 0) || (Object.keys(req.query).indexOf(qry_str_param_min_years_required) < 0)) {
     res.status(HttpStatus.EXPECTATION_FAILED).send("Minimum amout of years required to compare financial results were not informed")
     return
-  }else if(Number.isNaN(req.query[qry_str_param_min_years_required])){
+  } else if (Number.isNaN(req.query[qry_str_param_min_years_required])) {
     res.status(HttpStatus.BAD_REQUEST).send("Minimum amout of years required to compare financial results must be an integer value")
     return
   }
