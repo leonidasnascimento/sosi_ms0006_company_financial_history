@@ -27,13 +27,25 @@ var get_history_values = function (values, history, row) {
   }
 
   for (var index_hist = 0; index_hist < values.history.length; index_hist++) {
+    if (values.history[index_hist] == null || values.history[index_hist] == undefined) {
+      continue
+    }
+
     if ((CONST_DESCRIPTION_FIELD in values.history[index_hist]) && (String(values.history[index_hist].description).toLowerCase() == String(history).toLowerCase()) && (CONST_PERIODS_FIELD in values.history[index_hist])) {
       for (var index_period = 0; index_period < values.history[index_hist].periods.length; index_period++) {
+        if (values.history[index_hist].periods[index_period] == null || values.history[index_hist].periods[index_period] == undefined) {
+          continue
+        }
+
         if (!(CONST_ROW_FIELD in values.history[index_hist].periods[index_period]) || !(CONST_DATE_FIELD in values.history[index_hist].periods[index_period])) {
           continue
         }
 
         for (var index_row = 0; index_row < values.history[index_hist].periods[index_period].rows.length; index_row++) {
+          if (values.history[index_hist].periods[index_period].rows[index_row] == null || values.history[index_hist].periods[index_period].rows[index_row] == undefined) {
+            continue
+          }
+
           if (!(CONST_DESCRIPTION_FIELD in values.history[index_hist].periods[index_period].rows[index_row]) || !(CONST_VALUE_FIELD in values.history[index_hist].periods[index_period].rows[index_row])) {
             continue
           }
