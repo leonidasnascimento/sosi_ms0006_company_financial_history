@@ -4,7 +4,7 @@ var dal = require('../data/dal_comp_financial_history')
 var HttpStatus = require('http-status-codes')
 var regression = require('regression');
 const cacheDb = require("sosi_cache_db_manager");
-const cacheDbKey_DividendAnalysis = "sosi_ms0005_company_statistics.dividend_analysis"
+const cacheDbKey_DividendAnalysis = "sosi_ms0006_company_financial_history.dividend_analysis"
 
 const CONST_CASH_FLOW_HISTORY_DESC = "Fluxo de Caixa"
 const CONST_BALANCE_SHEET_HISTORY_DESC = "Balanço"
@@ -271,7 +271,7 @@ router.get('/dividend_analysis', function (req, res, next) {
               lstData.push(result);
             }
           })
-          
+
           res.status(HttpStatus.OK).send(lstData);
         }, function (data) {
           res.status(HttpStatus.METHOD_FAILURE).send(data);
