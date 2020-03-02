@@ -34,6 +34,24 @@ module.exports = class {
             });
     }
 
+    getAll(on_success, on_error) {
+        this.initialize_app();
+        let data = [];
+
+        admin.firestore().collection(db_collection)
+            .get()
+            .then(doc => {
+                doc.docs.forEach(d => {
+                    data.push(d.data());
+                })
+
+                on_success(data)
+            })
+            .catch((err) => {
+                on_error('Error getting documents => ' + err)
+            });
+    }
+
     initialize_app() {
         if (admin.apps.length <= 0) {
             admin.initializeApp({

@@ -3,6 +3,8 @@ var router = express.Router();
 var dal = require('../data/dal_comp_financial_history')
 var HttpStatus = require('http-status-codes')
 var regression = require('regression');
+const cacheDb = require("sosi_cache_db_manager");
+const cacheDbKey_DividendAnalysis = "sosi_ms0005_company_statistics.dividend_analysis"
 
 const CONST_CASH_FLOW_HISTORY_DESC = "Fluxo de Caixa"
 const CONST_BALANCE_SHEET_HISTORY_DESC = "Balanço"
@@ -18,6 +20,39 @@ const CONST_VALUE_FIELD = "value"
 const CONST_DATE_FIELD = "date"
 const CONST_ROW_FIELD = "rows"
 const CONST_HISTORY_FIELD = "history"
+
+var getDividendAnalysisData = function (data, min_allowed_years_fin_result) {
+  if (!('code' in data)) {
+    return undefined;
+  }
+
+  var arr_values_cash_flow_dividend = {}
+  var arr_values_cash_flow_net_profit = {}
+  var result = {
+    code: "",
+    net_profit: 0.00,
+    has_dividend_been_constantly_shared: null,
+    has_dividend_grown_over_years: null,
+    has_net_profit_grown_over_years: null,
+  }
+
+  arr_values_cash_flow_dividend = get_history_values(data, CONST_CASH_FLOW_HISTORY_DESC, CONST_PAYED_DIVIDENDS_FIELD)
+  arr_values_cash_flow_net_profit = get_history_values(data, CONST_CASH_FLOW_HISTORY_DESC, CONST_NET_PROFIT_FIELD)
+
+  if (arr_values_cash_flow_net_profit !== undefined && arr_values_cash_flow_net_profit !== null) {
+    arr_values_cash_flow_net_profit.sort(function (a, b) {
+      return new Date(b[0]) - new Date(a[0]);
+    });
+  }
+
+  result.code = data.code;
+  result.net_profit = (arr_values_cash_flow_net_profit !== undefined && arr_values_cash_flow_net_profit !== null && arr_values_cash_flow_net_profit.length > 0) ? arr_values_cash_flow_net_profit[0][1] : 0.00;
+  result.has_dividend_been_constantly_shared = have_financial_results_issued_year_after_year(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
+  result.has_dividend_grown_over_years = are_values_indicating_growth(arr_values_cash_flow_dividend, min_allowed_years_fin_result)
+  result.has_net_profit_grown_over_years = are_values_indicating_growth(arr_values_cash_flow_net_profit, min_allowed_years_fin_result)
+
+  return result
+}
 
 var get_history_values = function (values, history, row) {
   var return_obj = []
@@ -201,6 +236,87 @@ router.post('/', function (req, res, next) {
   }, function (data) {
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(data)
   })
+});
+
+/* **********************************
+
+  DIVIDEND ANALYSIS ENDPOINT SECTION
+
+************************************* */
+
+router.get('/dividend_analysis', function (req, res, next) {
+  if ((Object.keys(req.query).length === 0) || (Object.keys(req.query).indexOf(CONST_QRY_STR_MIN_REQ_YEARS) < 0)) {
+    res.status(HttpStatus.EXPECTATION_FAILED).send("Minimum amout of years required to compare financial results were not informed")
+    return
+  } else if (Number.isNaN(req.query[CONST_QRY_STR_MIN_REQ_YEARS])) {
+    res.status(HttpStatus.BAD_REQUEST).send("Minimum amout of years required to compare financial results must be an integer value")
+    return
+  }
+
+  var min_allowed_years_fin_result = Number(req.query[CONST_QRY_STR_MIN_REQ_YEARS])
+  var cacheDbMngr = new cacheDb(cacheDbKey_DividendAnalysis)
+
+  //Trying to get data from Redis
+  cacheDbMngr.getValue(function (obj) {
+    if (obj.data !== null) {
+      res.status(HttpStatus.OK).send(JSON.parse(obj.data));
+    } else {
+      //Going to main db to retrieve the data if some error occurr when getting from Redis
+      new dal()
+        .getAll(function (data) {
+          data.forEach(d => {
+            var result = getDividendAnalysisData(d, min_allowed_years_fin_result)
+
+            if (result !== undefined) {
+              lstData.push(result);
+            }
+          })
+          
+          res.status(HttpStatus.OK).send(lstData);
+        }, function (data) {
+          res.status(HttpStatus.METHOD_FAILURE).send(data);
+        });
+    }
+  }, function (obj) {
+    res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(obj);
+  })
+});
+
+router.put('/dividend_analysis', function (req, res, next) {
+  if ((Object.keys(req.query).length === 0) || (Object.keys(req.query).indexOf(CONST_QRY_STR_MIN_REQ_YEARS) < 0)) {
+    res.status(HttpStatus.EXPECTATION_FAILED).send("Minimum amout of years required to compare financial results were not informed")
+    return
+  } else if (Number.isNaN(req.query[CONST_QRY_STR_MIN_REQ_YEARS])) {
+    res.status(HttpStatus.BAD_REQUEST).send("Minimum amout of years required to compare financial results must be an integer value")
+    return
+  }
+
+  var min_allowed_years_fin_result = Number(req.query[CONST_QRY_STR_MIN_REQ_YEARS])
+
+  new dal().getAll(function (data) {
+    var cacheDbMngr = new cacheDb(cacheDbKey_DividendAnalysis)
+    var lstData = []
+
+    if (data === null || data === undefined) {
+      res.status(HttpStatus.EXPECTATION_FAILED).send("No data");
+    } else {
+      data.forEach(d => {
+        var result = getDividendAnalysisData(d, min_allowed_years_fin_result)
+
+        if (result !== undefined) {
+          lstData.push(result);
+        }
+      })
+
+      cacheDbMngr.setValue(lstData, function (obj) {
+        res.status(HttpStatus.OK).send(obj)
+      }, function (error) {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(error)
+      });
+    }
+  }, function (data) {
+    res.status(HttpStatus.METHOD_FAILURE).send(data)
+  });
 });
 
 module.exports = router;

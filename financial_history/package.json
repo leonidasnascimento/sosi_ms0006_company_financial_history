@@ -17,6 +17,7 @@
     "jade": "~1.11.0",
     "morgan": "~1.9.1",
     "pug": "^2.0.4",
-    "regression": "^2.0.1"
+    "regression": "^2.0.1",
+    "sosi_cache_db_manager": "^1.1.1"
   }
 }
